@@ -10,8 +10,8 @@ import urllib2
 """
 Globals
 """
-USER_AGENT = 'FakeAccount-Scraper (github.com/Gradous/FakeAccount-Scraper)'
-
+#USER_AGENT = 'FakeAccount-Scraper (github.com/Gradous/FakeAccount-Scraper)'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)'
 """
 Main scraping/spidering function
 """
@@ -24,33 +24,44 @@ def scrape(url):
 		fakeaccount_response = urllib2.urlopen(fakeaccount_req)
 		# Extract the entries for accounts from the BeautifulSoup
 		fa_soup = BeautifulSoup(fakeaccount_response.read()).find("div", {"id" : "items"})
-		fa_soup = BeautifulSoup(str(fa_soup)).findAll("div", {"class" : "item"})
+		fa_soup_items = BeautifulSoup(fa_soup.prettify()).findAll("div", {"class" : "item"})
 
 		""" 
 		The soup will be empty if the page has no accounts or falls into the "bad"
 		category (paywalled, commmunity, etc.)
 		"""
-		if not fa_soup:
+		if not fa_soup_items:
 			print "No results for", url, "!"
 			fakeaccount_response.close()
 			return None
-
 		# Buckets for parsing
 		usernames = []
 		passwords = []
 		rates = []
 		votes = []
-		for account in fa_soup:
-			# this was significantly easier than BugMeNot
-			usernames.append(BeautifulSoup(str(account)).\
-			find("span", {"class" : "login"}).text)
-			passwords.append(BeautifulSoup(str(account)).\
-			find("span", {"class" : "password"}).text)
-			rates.append(BeautifulSoup(str(account)).\
-			find("span", {"class" : "rating"}).text.strip())
-			# split off a little extra text from the votes
-			votes.append(BeautifulSoup(str(account)).\
-			find("span", {"class" : "votes"}).text[1:-1])
+		for account in fa_soup_items:
+			account_soup = BeautifulSoup(str(account))
+			user = account_soup.find("span", {"class" : "login"})
+			password = account_soup.find("span", {"class" : "password"})
+			rating = account_soup.find("span", {"class" : "rating"})
+			# fakeaccount does not check well for empties
+			if user.text:
+				usernames.append(user.text.strip())
+			else:
+				usernames.append("#None#")
+			if password.text:
+				passwords.append(password.text.strip())
+			else:
+				passwords.append("#None#")
+			if rating.text:
+				rates.append(rating.text.strip())
+				# split off a little extra text from the votes
+				vote = account_soup.find("span", {"class" : "votes"})
+				vote = vote.text.split()[1:] # defaults to removing spaces
+				votes.append(" ".join((vote[0], vote[1][:-1])))
+			else:
+				rates,votes.append("#None#")
+				#votes.append("#None")
 
 		# return the list of tuples for later parsing
 		fakeaccount_response.close()
@@ -63,6 +74,10 @@ def scrape(url):
 			return None
 		else:
 			raise e(e.fp.read())
+	except AttributeError, e2:
+		print url
+		#print account_soup
+		raise e2
 
 
 """
@@ -101,7 +116,7 @@ def report_results(url, result, result_num, writeout, log):
 	if writeout:
 		write_result(url, result, log)
 
-def main(scrape_file, min_wait=1.0, max_wait=3.5, **kwargs):
+def main(scrape_file, min_wait=2.0, max_wait=4.5, **kwargs):
 	# seed for waiting
 	random.seed()
 
