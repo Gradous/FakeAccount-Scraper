@@ -10,8 +10,7 @@ import urllib2
 """
 Globals
 """
-#USER_AGENT = 'FakeAccount-Scraper (github.com/Gradous/FakeAccount-Scraper)'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)'
+USER_AGENT = 'FakeAccount-Scraper (github.com/Gradous/FakeAccount-Scraper)'
 """
 Main scraping/spidering function
 """
